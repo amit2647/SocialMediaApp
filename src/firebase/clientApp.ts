@@ -1,11 +1,20 @@
 // Import the functions you need from the SDKs
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import {
+  getAuth,
+  connectAuthEmulator,
+} from "firebase/auth";
+import {
+  getFirestore,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
+import {
+  getStorage,
+  connectStorageEmulator,
+} from "firebase/storage";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
-// Your Firebase config
+// Your Firebase config (from .env.local)
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -22,15 +31,26 @@ const firestore = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-// Initialize Analytics only on the client side
-let analytics;
-if (typeof window !== "undefined") {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
+// ✅ Connect to emulators when running locally
+if (typeof window !== "undefined" && location.hostname === "localhost") {
+  console.log("🔥 Using Firebase Emulators");
+  connectAuthEmulator(auth, "http://localhost:9099");
+  connectFirestoreEmulator(firestore, "localhost", 8080);
+  connectStorageEmulator(storage, "localhost", 9199);
 }
 
-// Export only the client-safe modules
+// ✅ Analytics — only enabled in production
+let analytics: any = null;
+
+if (typeof window !== "undefined") {
+  if (process.env.NODE_ENV === "production") {
+    isSupported().then((supported) => {
+      if (supported) analytics = getAnalytics(app);
+    });
+  } else {
+    console.log("📊 Analytics disabled in development/emulator mode");
+  }
+}
+
+// Export modules
 export { app, firestore, auth, storage };

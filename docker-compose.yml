@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: aurelius-minio
+    restart: unless-stopped
+    ports:
+      - "9500:9000"   # MinIO API (match NEXT_PUBLIC_MINIO_PORT)
+      - "9501:9001"   # MinIO Web Console
+    environment:
+      MINIO_ROOT_USER: ${NEXT_PUBLIC_MINIO_ACCESS_KEY:-admin}
+      MINIO_ROOT_PASSWORD: ${NEXT_PUBLIC_MINIO_SECRET_KEY:-admin123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - aurelius_net
+
+volumes:
+  minio_data:
+
+networks:
+  aurelius_net:
+    driver: bridge
